@@ -7,7 +7,9 @@
 *.RData
 *.rda
 
-# Keep the four prepared environments
+# Keep the prepared manuscript environments
+!data/
+!data/environments/
 !data/environments/envi10.RData
 !data/environments/envi100.RData
 !data/environments/envi300.RData
