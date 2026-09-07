@@ -40,6 +40,7 @@
 initial_isolation <- 10L        #(choose 10,100,300,500)
 epistasis_type <- "bdm"         #(choose bdm or pos)
 epistasis_magnitude <- "001"    #(choose 01,005,001)
+preference_prob     <- 0.10     # choose 0.10, 0.50, 0.90
 environment_type <- "gradient"  #(choose gradient or homogeneous)
 
 config <- list( base_seed = 1223L,
@@ -50,11 +51,11 @@ config <- list( base_seed = 1223L,
   mating_script = file.path("R", "reproduction.R"),
   
   output_dir = file.path( "output",
-    sprintf("isolation_%d_%s_%s_%s", initial_isolation, epistasis_type,
-      epistasis_magnitude, environment_type)),
+    sprintf("isolation_%d_%s_%s_%s_%s", initial_isolation, epistasis_type,
+      epistasis_magnitude,sprintf("%02d", round(preference_prob * 10)), environment_type)),
   
   n_iterations = 10L,
-  preference_prob = 0.10,
+  preference_prob = preference_prob,
   epistasis_type = epistasis_type,
   epistasis_magnitude = epistasis_magnitude,
   environment_type = environment_type,
@@ -67,28 +68,20 @@ config <- list( base_seed = 1223L,
 # ------------------------------------------------------------------------------
 
 EPI_EFFECTS <- list(
-  "01" = c(
-    -0.020733651, -0.018625038, -0.006291431, -0.004034495,
+  "01" = c(-0.020733651, -0.018625038, -0.006291431, -0.004034495,
     -0.008043853, -0.005442798, -0.003021580, -0.015429728,
     -0.003002657, -0.011406430, -0.010789055, -0.015517526,
-    -0.012286533, -0.008870254, -0.017678590
-  ),
+    -0.012286533, -0.008870254, -0.017678590),
   
-  "005" = c(
-    -0.0008622194, -0.0009184874, -0.0007796196, -0.0008385601,
+  "005" = c(-0.0008622194, -0.0009184874, -0.0007796196, -0.0008385601,
     -0.0013560065, -0.0002860874, -0.0012618780, -0.0003284061,
     -0.0007399826, -0.0009307868, -0.0005277535, -0.0012485223,
-    -0.0001434993, -0.0008188440, -0.0018042037
-  ),
+    -0.0001434993, -0.0008188440, -0.0018042037),
   
-  "001" = c(
-    -0.004008850, -0.003938429, -0.004865292, -0.005568119,
+  "001" = c(-0.004008850, -0.003938429, -0.004865292, -0.005568119,
     -0.005254795, -0.004558156, -0.004817784, -0.004825235,
     -0.005426624, -0.005845740, -0.004434927, -0.005463951,
-    -0.005877341, -0.005674150, -0.005675997
-  )
-)
-
+    -0.005877341, -0.005674150, -0.005675997))
 
 # ------------------------------------------------------------------------------
 # 3. Package and input validation
@@ -107,6 +100,10 @@ check_packages <- function() {
   
   invisible(TRUE)
 }
+
+library(AlphaSimR)
+library(future)
+library(future.apply)
 
 
 load_model_environment <- function(environment_path, mating_script) {
@@ -135,14 +132,8 @@ load_model_environment <- function(environment_path, mating_script) {
   )
   
   missing_objects <- required_objects[
-    !vapply(
-      required_objects,
-      exists,
-      logical(1),
-      envir = model_env,
-      inherits = FALSE
-    )
-  ]
+    !vapply(required_objects, exists, logical(1), envir = model_env,
+      inherits = FALSE)]
   
   sim_param_name <- if (exists("SP", envir = model_env, inherits = FALSE)) {
     "SP"
